@@ -4,6 +4,7 @@ import { LoginSchema } from "@/lib/schemas/LoginSchema";
 import { RegisterSchema } from "@/lib/schemas/RegisterSchema";
 import { ActionResult } from "@/types";
 import { signIn, signOut } from "@/auth";
+import { connect } from "http2";
 
 export async function signOutUser() {
   await signOut({ redirectTo: "/" });
@@ -39,7 +40,7 @@ export async function signUpUser(
     const result = await response?.json();
 
     if (result && result.user.id) {
-      const account = await createAccount(result.user.id, result.jwt, result.name);
+      const account = await createAccount(result.user.id, result.jwt, result.user.username);
     }
 
     return { status: "success", data: "Success" };
@@ -77,7 +78,7 @@ export async function createAccount(
   token: string, 
   name: string
 ): Promise<ActionResult<string | {}>> {
-  try {
+  try { 
     const response = await fetch("http://localhost:1337/api/accounts", {
       method: "POST",
       headers: {
@@ -86,10 +87,11 @@ export async function createAccount(
       },
       body: JSON.stringify({
         data: {
-          userId: id,
-          name: "",
-          tgId: "",
-          tgUsername: "",
+          "userId": id,
+          "users_permissions_user": id,
+          "name": name,
+          "tgId": "",
+          "tgUsername": "",
         },
       }),
     });
@@ -103,6 +105,30 @@ export async function createAccount(
     console.log(result);
 
     return { status: "success", data: "success" };
+  } catch (error) {
+    console.error(error);
+    return { status: "error", error: "Произошла ошибка, попробуйте позже" };
+  }
+}
+
+export async function getAccount (id: string, token: string): Promise<ActionResult<string | {}>> {
+  try { 
+    const response = await fetch(`http://localhost:1337/api/accounts?filters[userId][$eq]=${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const result = await response?.json();
+
+    if (result && result.error) {
+      console.log(result);
+      return { status: "error", error: result.error.message };
+    }
+
+    return { status: "success", data: result };
   } catch (error) {
     console.error(error);
     return { status: "error", error: "Произошла ошибка, попробуйте позже" };
