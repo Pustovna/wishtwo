@@ -35,13 +35,13 @@ type Wishlist = {
 };
 
 type Wish = {
-  id: string;
+  id: number;
   wishlistId: string;
   title: string;
   description: string;
-  price: number | null;
+  price: number | null | string;
   link: string | null;
-  image: string | null;
+  image: "" | File | undefined;
   thingId: string;
   rating: number;
 };

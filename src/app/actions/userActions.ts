@@ -1,13 +1,14 @@
 "use server";
 import { ActionResult, Wishlist } from "@/types";
 import { getAccount } from "./authActions";
+import { json } from "stream/consumers";
 
 export async function createWishList(
   wishlist: Wishlist,
   token: string
 ): Promise<ActionResult<string | {}>> {
   try {
-    console.log(wishlist);
+    // console.log(wishlist);
     const accountInfo = await getAccount(wishlist.account, token);
     let accountId = null;
     if (accountInfo && accountInfo.status === "success" && accountInfo.data) {
@@ -22,7 +23,8 @@ export async function createWishList(
       };
     }
 
-   
+    console.log("sending data", wishlist.wishes);
+
     const response = await fetch("http://localhost:1337/api/wishlists", {
       method: "POST",
       headers: {
@@ -33,6 +35,7 @@ export async function createWishList(
         data: {
           account: accountId,
           title: wishlist.title,
+          wishes: wishlist.wishes,
         },
       }),
     });
@@ -50,4 +53,71 @@ export async function createWishList(
     console.error(error);
     return { status: "error", error: "Произошла ошибка, попробуйте позже" };
   }
+}
+
+export async function getWishList(
+  id: string,
+  token: string
+): Promise<ActionResult<Wishlist | {}>> {
+  const accountInfo = await getAccount(id, token);
+  let accountId = null;
+  if (accountInfo && accountInfo.status === "success" && accountInfo.data) {
+    accountId = (accountInfo.data as any).data[0].id;
+  }
+
+  if (!accountId) {
+    return {
+      status: "error",
+      error: "Произошла ошибка во время идентификации аккаунта",
+    };
+  }
+
+  try {
+    const response = await fetch(`http://localhost:1337/api/wishlists?filters[account][$eq]=${accountId}&populate=wishes.image`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const result = await response?.json();
+    if (result && result.error) {
+      console.log(result);
+      return { status: "error", error: result.error.message };
+    }
+
+    console.log(result);
+
+    return { status: "success", data: result };
+  } catch (error) {
+    console.error(error);
+    return { status: "error", error: "Произошла ошибка, попробуйте позже" };
+  }
+}
+
+export async function uploadFile(
+  file: File,
+  token: string
+): Promise<ActionResult<string | {}>> {
+  const formData = new FormData();
+  formData.append("files", file);
+
+  const response = await fetch("http://localhost:1337/api/upload", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const result = await response?.json();
+  if (result && result.error) {
+    console.log(result);
+    return { status: "error", error: result.error.message };
+  }
+
+  console.log(result);
+
+  return { status: "success", data: result };
 }

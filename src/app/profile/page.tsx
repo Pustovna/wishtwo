@@ -1,7 +1,8 @@
-import CreateAcc from "./CreateAcc";
+import CreateWish from "./CreateAcc";
+
 import { auth } from "@/auth";
 import { Container, Typography } from "@mui/material";
-import AlternateEmailOutlinedIcon from "@mui/icons-material/AlternateEmailOutlined";
+import ListWidget from "../widgets/List/ListWidget";
 
 const Profile: React.FC = async () => {
   const session = await auth();
@@ -17,8 +18,11 @@ const Profile: React.FC = async () => {
           {user?.name}
         </Typography>
       </div> */}
-
-      <CreateAcc />
+      <CreateWish />
+      <Typography variant="h6" color="white.800">
+        Your wishlists
+      </Typography>
+      <ListWidget />
     </Container>
   );
 };
