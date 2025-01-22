@@ -46,7 +46,7 @@ const TableWish: React.FC = ({ wishes }) => {
               <S.Cell>{wish.price}</S.Cell>
               <S.Cell>{wish.link}</S.Cell>
               <S.Cell sx={{ display: "flex", justifyContent: "flex-end" }}>
-                {wish.image && (
+                {wish.image.length > 0 && (
                   <Image
                     loader={() =>
                       `http://localhost:1337${wish.image.data[0].attributes.formats.thumbnail.url}`

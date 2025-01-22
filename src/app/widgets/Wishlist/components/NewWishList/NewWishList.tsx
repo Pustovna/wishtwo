@@ -5,24 +5,18 @@ import ImageIcon from "@/app/components/InputFields/ImageIcon";
 import {
   Box,
   Button,
-  FilledInput,
-  FormControl,
-  FormHelperText,
-  Input,
-  InputLabel,
-  TextField,
 } from "@mui/material";
 import * as React from "react";
-import { set } from "zod";
 import * as S from "./NewWishList.style";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ItemSchema, itemSchema } from "@/lib/schemas/ItemSchema";
 import DeleteButton from "@/app/components/Buttons/DeleteButton";
 import { useSession } from "next-auth/react";
-import { createWishList, uploadFile} from "@/app/actions/userActions";
+import { createWishList, uploadFile } from "@/app/actions/userActions";
 import { Wish, Wishlist } from "@/types";
-import { stat } from "fs";
+import NewItem from "./NewItem";
+
 
 interface NewWith {
   name: string;
@@ -33,11 +27,11 @@ interface NewWith {
   id: number;
 }
 
-const fieldStyle = {
-  color: "black",
-};
+interface NewWishListProps {
+  handleClose: () => void;
+}
 
-export default function NewWishList() {
+export default function NewWishList({ handleClose }: NewWishListProps) {
   const [wish, setWish] = React.useState<Wish[]>([]);
   const [openNewWish, setOpenNewWish] = React.useState(false);
 
@@ -56,17 +50,6 @@ export default function NewWishList() {
   const currentValues = watch();
   const { data: session } = useSession();
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target) return;
-    if (!e.target.files) return;
-    const file = e.target.files[0];
-    setValue("image", file);
-    // setFile(URL.createObjectURL(e.target.files[0]));
-  }
-
-  const onSubmit = (data: ItemSchema) => {
-    console.log(data);
-  };
   const handleAddWish = () => {
     setOpenNewWish(!openNewWish);
   };
@@ -77,38 +60,31 @@ export default function NewWishList() {
     let documentID = undefined;
 
     if (image && typeof image !== "string" && session?.token) {
-        
-        try {
-         const response = await uploadFile(image, session?.token);
-         if (response.status === "error") {
-
-         } else {
-            documentID = response.data[0]?.id;
-            console.log(documentID);
-             
-         }
-         
-        } catch (error) {
-          console.error(error);
+      try {
+        const response = await uploadFile(image, session?.token);
+        if (response.status === "error") {
+        } else {
+          documentID = response.data[0]?.id;
+          console.log(documentID);
         }
-
+      } catch (error) {
+        console.error(error);
+      }
     }
 
     setWish([
-        ...wish,
-        {
-          title: name,
-          link: link,
-          price: price,
-          description: comment,
-          image: documentID,
-          id: wish.length,
-          imageObject: image,
-        },
-      ]);
+      ...wish,
+      {
+        title: name,
+        link: link,
+        price: price,
+        description: comment,
+        image: documentID,
+        id: wish.length,
+        imageObject: image,
+      },
+    ]);
 
-    
-    
     setOpenNewWish(false);
     reset(
       { name: "", link: "", price: "", comment: "", image: "" },
@@ -136,6 +112,12 @@ export default function NewWishList() {
     setWish(wish.filter((w) => w.id !== id));
   };
 
+  const handleCancel = () => {
+    setValue("title", "")
+    setWish([]); 
+    handleClose();
+  }
+
   return (
     <Box minWidth={500} maxWidth={500} margin="auto">
       <form onSubmit={handleSubmit(handleConfirm)}>
@@ -151,87 +133,7 @@ export default function NewWishList() {
         />
         <AddButton tipText={"Add new wish"} handleClick={handleAddWish} />
         {openNewWish && (
-          <Box display="flex" flexDirection="row" flexWrap="wrap">
-            <FormControl
-              //    error={!!errors.email}
-              variant="outlined"
-            >
-              <InputLabel htmlFor="name">Item</InputLabel>
-              <Input
-                id="name"
-                aria-describedby="name"
-                sx={fieldStyle}
-                {...register("name")}
-              />
-              <FormHelperText id="name">{errors.name?.message}</FormHelperText>
-            </FormControl>
-            <FormControl
-              //    error={!!errors.email}
-              variant="outlined"
-            >
-              <InputLabel htmlFor="link">Link</InputLabel>
-              <Input
-                id="link"
-                aria-describedby="link"
-                sx={fieldStyle}
-                {...register("link")}
-              />
-              <FormHelperText id="link">{errors.link?.message}</FormHelperText>
-            </FormControl>
-            <FormControl
-              //    error={!!errors.email}
-              variant="outlined"
-            >
-              <InputLabel htmlFor="price">Price</InputLabel>
-              <Input
-                id="price"
-                aria-describedby="price"
-                sx={fieldStyle}
-                {...register("price")}
-              />
-              <FormHelperText id="price">
-                {errors.price?.message}
-              </FormHelperText>
-            </FormControl>
-            <FormControl
-              //    error={!!errors.email}
-              variant="outlined"
-            >
-              <InputLabel htmlFor="comment">Comment</InputLabel>
-              <Input
-                id="comment"
-                aria-describedby="comment"
-                sx={fieldStyle}
-                {...register("comment")}
-              />
-              <FormHelperText id="comment">
-                {errors.comment?.message}
-              </FormHelperText>
-            </FormControl>
-            <FormControl
-              //    error={!!errors.email}
-              variant="outlined"
-            >
-              <FilledInput
-                type="file"
-                aria-label="Add image"
-                id="image"
-                onChange={handleChange}
-                // {...register("image")}
-              />
-              <FormHelperText id="image">
-                {errors.image?.message}
-              </FormHelperText>
-            </FormControl>
-
-            <ConfirmButtom
-              type={"submit"}
-              tipText={"Confirm"}
-              //   handleClick={handleConfirm}
-            />
-
-            {/* <ConfirmButtom tipText={"Confirm"} handleClick={handleConfirm} /> */}
-          </Box>
+          <NewItem setValue={setValue} register={register} errors={errors} />
         )}
       </form>
 
@@ -269,17 +171,32 @@ export default function NewWishList() {
             </Box>
           );
         })}
-      <Button
-        variant="contained"
-        color="primary"
-        fullWidth
-        type="submit"
-        sx={{ mt: 2 }}
-        onClick={sendData}
-        // disabled={!isValid}
-      >
-        Create
-      </Button>
+
+      <Box display="flex" gap="20px">
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          type="submit"
+          sx={{ mt: 2 }}
+          onClick={sendData}
+
+          // disabled={!isValid}
+        >
+          Create
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          type="submit"
+          sx={{ mt: 2 }}
+          onClick={handleCancel}
+          // disabled={!isValid}
+        >
+          Cancel
+        </Button>
+      </Box>
     </Box>
   );
 }

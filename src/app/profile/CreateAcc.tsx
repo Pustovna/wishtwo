@@ -32,10 +32,6 @@ export default function CreateWish() {
 
   const handleOpen = () => {
     setOpen(true);
-
-    // if (session) {
-    //   const create = await createWishList(wishList, session.token);
-    // }
   };
 
   const handleClose = () => setOpen(false);
@@ -55,12 +51,8 @@ export default function CreateWish() {
             aria-describedby="edit-wish-list"
           >
             <DialogContent>
-              <NewWishList />
+              <NewWishList handleClose={handleClose}/>
             </DialogContent>
-            <DialogActions>
-              <Button onClick={handleClose}>Disagree</Button>
-              <Button onClick={handleClose}>Agree</Button>
-            </DialogActions>
           </Dialog>
         </div>
       )}

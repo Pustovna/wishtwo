@@ -18,10 +18,11 @@ const Profile: React.FC = async () => {
           {user?.name}
         </Typography>
       </div> */}
-      <CreateWish />
+      
       <Typography variant="h6" color="white.800">
         Your wishlists
       </Typography>
+      <CreateWish />
       <ListWidget />
     </Container>
   );
