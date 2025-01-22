@@ -16,6 +16,7 @@ import { useSession } from "next-auth/react";
 import { createWishList, uploadFile } from "@/app/actions/userActions";
 import { Wish, Wishlist } from "@/types";
 import NewItem from "./NewItem";
+import { wishListSchema, WishListSchema } from "@/lib/schemas/WishListSchema";
 
 
 interface NewWith {
@@ -34,63 +35,24 @@ interface NewWishListProps {
 export default function NewWishList({ handleClose }: NewWishListProps) {
   const [wish, setWish] = React.useState<Wish[]>([]);
   const [openNewWish, setOpenNewWish] = React.useState(false);
-
+  const { data: session } = useSession();
   const {
     register,
-    handleSubmit,
-    setError,
-    watch,
-    setValue,
     reset,
-    formState: { isValid, errors, isSubmitting },
-  } = useForm<ItemSchema>({
-    resolver: zodResolver(itemSchema),
-    mode: "onChange",
+    watch, 
+    setValue,
+    formState: { isValid, errors }
+  } = useForm<WishListSchema>({
+    resolver: zodResolver(wishListSchema),
+    mode: "onChange"
   });
+
   const currentValues = watch();
-  const { data: session } = useSession();
 
   const handleAddWish = () => {
     setOpenNewWish(!openNewWish);
   };
 
-  const handleConfirm = async () => {
-    const { name, link, price, comment, image } = currentValues;
-
-    let documentID = undefined;
-
-    if (image && typeof image !== "string" && session?.token) {
-      try {
-        const response = await uploadFile(image, session?.token);
-        if (response.status === "error") {
-        } else {
-          documentID = response.data[0]?.id;
-          console.log(documentID);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    setWish([
-      ...wish,
-      {
-        title: name,
-        link: link,
-        price: price,
-        description: comment,
-        image: documentID,
-        id: wish.length,
-        imageObject: image,
-      },
-    ]);
-
-    setOpenNewWish(false);
-    reset(
-      { name: "", link: "", price: "", comment: "", image: "" },
-      { keepValues: false }
-    );
-  };
 
   const sendData = async () => {
     if (!session || !session.user?.id) return;
@@ -103,6 +65,11 @@ export default function NewWishList({ handleClose }: NewWishListProps) {
     try {
       const create = await createWishList(wishList, session.token);
       console.log(create);
+      if (create.status === "success") {
+        setWish([]);
+        reset({ title: "" }, { keepValues: false });
+        handleClose();
+      }
     } catch (error) {
       console.error(error);
     }
@@ -113,14 +80,14 @@ export default function NewWishList({ handleClose }: NewWishListProps) {
   };
 
   const handleCancel = () => {
-    setValue("title", "")
-    setWish([]); 
+    setWish([]);
+    reset({ title: "" }, { keepValues: false });
     handleClose();
   }
 
   return (
     <Box minWidth={500} maxWidth={500} margin="auto">
-      <form onSubmit={handleSubmit(handleConfirm)}>
+      
         <S.TextField
           label="title"
           variant="outlined"
@@ -133,9 +100,9 @@ export default function NewWishList({ handleClose }: NewWishListProps) {
         />
         <AddButton tipText={"Add new wish"} handleClick={handleAddWish} />
         {openNewWish && (
-          <NewItem setValue={setValue} register={register} errors={errors} />
+          <NewItem setWish={setWish} wish={wish} setOpenNewWish={setOpenNewWish} session={session}/>
         )}
-      </form>
+   
 
       {wish.length >= 0 &&
         wish.map((w, i) => {
@@ -180,8 +147,7 @@ export default function NewWishList({ handleClose }: NewWishListProps) {
           type="submit"
           sx={{ mt: 2 }}
           onClick={sendData}
-
-          // disabled={!isValid}
+          disabled={!isValid}
         >
           Create
         </Button>

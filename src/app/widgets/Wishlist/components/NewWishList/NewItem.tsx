@@ -1,20 +1,41 @@
 import ConfirmButtom from "@/app/components/Buttons/ConfirmButton";
 import { Box, FilledInput, FormControl, FormHelperText, Input, InputLabel } from "@mui/material";
-import { FieldError, UseFormRegister, UseFormSetValue, FieldErrors } from "react-hook-form";
-import { ItemSchema } from "@/lib/schemas/ItemSchema";
+import { ItemSchema, itemSchema } from "@/lib/schemas/ItemSchema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { uploadFile } from "@/app/actions/userActions";
+import { Wish } from "@/types";
+import { Session } from "next-auth";
+import { Dispatch, SetStateAction } from "react";
 
 
 interface NewItemProps {
-    setValue: UseFormSetValue<ItemSchema>;
-    register: UseFormRegister<ItemSchema>;
-    errors: FieldErrors<ItemSchema>;
+    setWish: (Dispatch<SetStateAction<Wish[]>>);
+    wish: Wish[];
+    setOpenNewWish: (option: boolean) => void;
+    session: Session | null;
 }
 
 const fieldStyle = {
     color: "black",
   };
 
-export default function NewItem({setValue, register, errors} : NewItemProps) {
+export default function NewItem({setWish, wish, setOpenNewWish, session} : NewItemProps) {
+    const {
+        register,
+        handleSubmit,
+        setError,
+        watch,
+        setValue,
+        reset,
+        formState: { isValid, errors, isSubmitting },
+      } = useForm<ItemSchema>({
+        resolver: zodResolver(itemSchema),
+        mode: "onChange",
+      });
+
+      const currentValues = watch();
+
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         if (!e.target) return;
@@ -24,8 +45,48 @@ export default function NewItem({setValue, register, errors} : NewItemProps) {
         // setFile(URL.createObjectURL(e.target.files[0]));
       }
 
+      const handleConfirm = async () => {
+        const { name, link, price, comment, image } = currentValues;
+    
+        let documentID = undefined;
+    
+        if (image && typeof image !== "string" && session?.token) {
+          try {
+            const response = await uploadFile(image, session?.token);
+            if (response.status === "error") {
+            } else {
+              documentID = response.data[0]?.id;
+              console.log(documentID);
+            }
+          } catch (error) {
+            console.error(error);
+          }
+        }
+    
+        setWish([
+          ...wish,
+          {
+            title: name,
+            link: link,
+            price: price,
+            description: comment,
+            image: documentID,
+            id: wish.length,
+            imageObject: image,
+          },
+        ]);
+    
+        setOpenNewWish(false);
+        reset(
+          { name: "", link: "", price: "", comment: "", image: "" },
+          { keepValues: false }
+        );
+      };
+
     return (
+        
         <Box display="flex" flexDirection="row" flexWrap="wrap">
+            <form onSubmit={handleSubmit(handleConfirm)}>
             <FormControl
               //    error={!!errors.email}
               variant="outlined"
@@ -106,6 +167,7 @@ export default function NewItem({setValue, register, errors} : NewItemProps) {
             />
 
             {/* <ConfirmButtom tipText={"Confirm"} handleClick={handleConfirm} /> */}
+            </form>
           </Box>
     )
 }
