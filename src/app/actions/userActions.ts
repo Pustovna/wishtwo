@@ -1,7 +1,6 @@
 "use server";
 import { ActionResult, Wishlist } from "@/types";
 import { getAccount } from "./authActions";
-import { json } from "stream/consumers";
 
 export async function createWishList(
   wishlist: Wishlist,
@@ -13,7 +12,6 @@ export async function createWishList(
     let accountId = null;
     if (accountInfo && accountInfo.status === "success" && accountInfo.data) {
       accountId = (accountInfo.data as any).data[0].id;
-      console.log(accountId);
     }
 
     if (!accountId) {
@@ -36,6 +34,7 @@ export async function createWishList(
           account: accountId,
           title: wishlist.title,
           wishes: wishlist.wishes,
+          link: wishlist.link,
         },
       }),
     });
@@ -58,7 +57,7 @@ export async function createWishList(
 export async function getWishList(
   id: string,
   token: string
-): Promise<ActionResult<Wishlist | {}>> {
+): Promise<ActionResult<{ data: any[] }>> {
   const accountInfo = await getAccount(id, token);
   let accountId = null;
   if (accountInfo && accountInfo.status === "success" && accountInfo.data) {
@@ -73,13 +72,16 @@ export async function getWishList(
   }
 
   try {
-    const response = await fetch(`http://localhost:1337/api/wishlists?filters[account][$eq]=${accountId}&populate=wishes.image`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await fetch(
+      `http://localhost:1337/api/wishlists?filters[account][$eq]=${accountId}&populate=wishes.image`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     const result = await response?.json();
     if (result && result.error) {
@@ -120,4 +122,23 @@ export async function uploadFile(
   console.log(result);
 
   return { status: "success", data: result };
+}
+
+export async function deleteWishList(
+  id: string,
+  token: string
+): Promise<ActionResult<string>> {
+  const response = await fetch(`http://localhost:1337/api/wishlists/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.ok) {
+    return { status: "success", data: 'deleted'};
+  } else { 
+    const errorMessage = await response.text(); 
+    return { status: "error", error: errorMessage || 'Failed to delete' };
+  }
 }

@@ -1,23 +1,20 @@
 "use client";
-import AddButton from "@/app/components/Buttons/AddButton";
-import ConfirmButtom from "@/app/components/Buttons/ConfirmButton";
-import ImageIcon from "@/app/components/InputFields/ImageIcon";
-import {
-  Box,
-  Button,
-} from "@mui/material";
 import * as React from "react";
-import * as S from "./NewWishList.style";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ItemSchema, itemSchema } from "@/lib/schemas/ItemSchema";
-import DeleteButton from "@/app/components/Buttons/DeleteButton";
 import { useSession } from "next-auth/react";
-import { createWishList, uploadFile } from "@/app/actions/userActions";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createWishList } from "@/app/actions/userActions";
+
 import { Wish, Wishlist } from "@/types";
-import NewItem from "./NewItem";
 import { wishListSchema, WishListSchema } from "@/lib/schemas/WishListSchema";
 
+import NewItem from "./NewItem";
+import AddButton from "@/app/components/Buttons/AddButton";
+import { Box, Button } from "@mui/material";
+import * as S from "./NewWishList.style";
+import DeleteButton from "@/app/components/Buttons/DeleteButton";
+import { LoaderText } from "@/app/components/Loader/Loader";
+import { toast } from "react-toastify";
 
 interface NewWith {
   name: string;
@@ -30,21 +27,27 @@ interface NewWith {
 
 interface NewWishListProps {
   handleClose: () => void;
+  setIsNewWishes: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function NewWishList({ handleClose }: NewWishListProps) {
+export const generateRandomId = () => {
+  return Math.random().toString(36).substring(2, 15);
+};
+ 
+export default function NewWishList({ handleClose, setIsNewWishes }: NewWishListProps ) {
   const [wish, setWish] = React.useState<Wish[]>([]);
   const [openNewWish, setOpenNewWish] = React.useState(false);
+  const [loader, setLoader] = React.useState(false);
   const { data: session } = useSession();
   const {
     register,
     reset,
-    watch, 
+    watch,
     setValue,
-    formState: { isValid, errors }
+    formState: { isValid, errors },
   } = useForm<WishListSchema>({
     resolver: zodResolver(wishListSchema),
-    mode: "onChange"
+    mode: "onChange",
   });
 
   const currentValues = watch();
@@ -53,25 +56,31 @@ export default function NewWishList({ handleClose }: NewWishListProps) {
     setOpenNewWish(!openNewWish);
   };
 
-
   const sendData = async () => {
     if (!session || !session.user?.id) return;
+    setLoader(true);
 
     const wishList: Wishlist = {
       account: session.user.id,
       title: currentValues.title,
       wishes: wish,
+      link: currentValues.title + generateRandomId(),
     };
     try {
       const create = await createWishList(wishList, session.token);
-      console.log(create);
       if (create.status === "success") {
+        console.log('true');
+        setIsNewWishes(true);
+        setLoader(false);
         setWish([]);
         reset({ title: "" }, { keepValues: false });
         handleClose();
+      } else {
+        toast.error(create.error as string);
       }
     } catch (error) {
       console.error(error);
+      toast.error(error as string);
     }
   };
 
@@ -83,61 +92,70 @@ export default function NewWishList({ handleClose }: NewWishListProps) {
     setWish([]);
     reset({ title: "" }, { keepValues: false });
     handleClose();
-  }
+  };
 
   return (
     <Box minWidth={500} maxWidth={500} margin="auto">
-      
-        <S.TextField
-          label="title"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          focused
-          error={!!errors.title}
-          helperText={errors.title?.message}
-          {...register("title")}
-        />
-        <AddButton tipText={"Add new wish"} handleClick={handleAddWish} />
-        {openNewWish && (
-          <NewItem setWish={setWish} wish={wish} setOpenNewWish={setOpenNewWish} session={session}/>
-        )}
-   
+      <S.TextField
+        label="title"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        focused
+        error={!!errors.title}
+        helperText={errors.title?.message}
+        {...register("title")}
+      />
+      {loader ? (
+        <LoaderText text="Wait, we are making magic"></LoaderText>
+      ) : (
+        <>
+          <AddButton tipText={"Add new wish"} handleClick={handleAddWish} />
+          {openNewWish && (
+            <NewItem
+              setWish={setWish}
+              wish={wish}
+              setOpenNewWish={setOpenNewWish}
+              session={session}
+            />
+          )}
 
-      {wish.length >= 0 &&
-        wish.map((w, i) => {
-          return (
-            <Box
-              sx={{
-                color: "black",
-                marginBottom: "20px",
-                padding: "10px 0",
-                borderBottom: "1px solid black",
-              }}
-              key={i}
-              display="flex"
-              flexDirection="row"
-              alignItems={"center"}
-              justifyContent={"space-between"}
-            >
-              <p>{w.title}</p>
-              <p>{w.price}</p>
-              <p>{w.link}</p>
-              <p>{w.description}</p>
-              {w.image && typeof w.image !== "string" && (
-                <S.ImageWish
-                  className="wish_image"
-                  src={URL.createObjectURL(w.imageObject)}
-                  alt="image"
-                />
-              )}
-              <DeleteButton
-                tipText={"Delete"}
-                handleDelete={() => deleteWish(w.id)}
-              />
-            </Box>
-          );
-        })}
+          {wish.length >= 0 &&
+            wish.map((w, i) => {
+              return (
+                <Box
+                  sx={{
+                    color: "black",
+                    marginBottom: "20px",
+                    padding: "10px 0",
+                    borderBottom: "1px solid black",
+                  }}
+                  key={i}
+                  display="flex"
+                  flexDirection="row"
+                  alignItems={"center"}
+                  justifyContent={"space-between"}
+                >
+                  <p>{w.title}</p>
+                  <p>{w.price}</p>
+                  <p>{w.link}</p>
+                  <p>{w.description}</p>
+                  {w.image && typeof w.image !== "string" && (
+                    <S.ImageWish
+                      className="wish_image"
+                      src={URL.createObjectURL(w.imageObject)}
+                      alt="image"
+                    />
+                  )}
+                  <DeleteButton
+                    tipText={"Delete"}
+                    handleDelete={() => deleteWish(w.id)}
+                  />
+                </Box>
+              );
+            })}
+        </>
+      )}
 
       <Box display="flex" gap="20px">
         <Button

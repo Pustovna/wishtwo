@@ -32,6 +32,7 @@ type Wishlist = {
   account: string;
   title: string;
   wishes?: Wish[];
+  link: string;
 };
 
 type Wish = {

@@ -1,25 +1,24 @@
 "use client";
 import React from "react";
 import {
-  Backdrop,
-  Box,
-  Fade,
-  Modal,
-  Typography,
   IconButton,
   Tooltip,
-  Paper,
   Dialog,
   DialogContent,
   DialogActions,
   Button,
   Slide,
+  Badge,
 } from "@mui/material";
 import DataGridDemo from "./components/EditTable/EditTable";
 import TableWish from "./components/Table";
 import EditIcon from "@mui/icons-material/Edit";
 import { TransitionProps } from "@mui/material/transitions";
 import AddButton from "../../components/Buttons/AddButton";
+import ShareIcon from "@mui/icons-material/Share";
+import DeleteIcon from "@mui/icons-material/Delete";
+import Link from "next/link";
+
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
@@ -30,10 +29,30 @@ const Transition = React.forwardRef(function Transition(
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const WishListWidget: React.FC = ({ wishes }) => {
+interface WishListWidgetProps {
+  wishes: any[];
+  setDeletedWishList: React.Dispatch<React.SetStateAction<string | null>>;
+}
+
+const WishListWidget: React.FC<WishListWidgetProps> = ({
+  wishes,
+  setDeletedWishList,
+}) => {
   const [open, setOpen] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+
+  const handleCopy = async (wishListLink: string) => {
+    try {
+        await navigator.clipboard.writeText(wishListLink);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+    }
+};
 
   return (
     <div>
@@ -43,6 +62,19 @@ const WishListWidget: React.FC = ({ wishes }) => {
           <EditIcon />
         </IconButton>
       </Tooltip>
+      <Tooltip title="Copy link" aria-label="share">
+      <Badge badgeContent={'Copied!'} color="primary" invisible={!copied}>
+        <IconButton color="primary" onClick={() => handleCopy(`${process.env.NEXT_PUBLIC_DOMAIN}/wishlist/${wishes.attributes.link}`)}>
+          <ShareIcon />
+        </IconButton>
+        </Badge>
+      </Tooltip>
+      <Tooltip title="Delete this wish list" aria-label="delete">
+        <IconButton color="primary" onClick={() => setDeletedWishList(wishes.id)}>
+          <DeleteIcon />
+        </IconButton>
+      </Tooltip>
+   
 
       <Dialog
         open={open}
@@ -52,7 +84,7 @@ const WishListWidget: React.FC = ({ wishes }) => {
         aria-describedby="edit-wish-list"
       >
         <DialogContent>
-          <DataGridDemo wishes={wishes}/>
+          <DataGridDemo wishes={wishes} />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Disagree</Button>

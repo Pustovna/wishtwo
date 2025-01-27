@@ -12,6 +12,10 @@ import { TransitionProps } from "@mui/material/transitions";
 import DataGridDemo from "../widgets/Wishlist/components/EditTable/EditTable";
 import NewWishList from "../widgets/Wishlist/components/NewWishList/NewWishList";
 
+interface CreateWishProps { 
+  setIsNewWishes: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement<any, any>;
@@ -21,7 +25,7 @@ const Transition = React.forwardRef(function Transition(
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-export default function CreateWish() {
+export default function CreateWish({ setIsNewWishes } : CreateWishProps) {
   const [open, setOpen] = React.useState(false);
   const { data: session } = useSession();
 
@@ -51,7 +55,7 @@ export default function CreateWish() {
             aria-describedby="edit-wish-list"
           >
             <DialogContent>
-              <NewWishList handleClose={handleClose}/>
+              <NewWishList handleClose={handleClose} setIsNewWishes={setIsNewWishes}/>
             </DialogContent>
           </Dialog>
         </div>

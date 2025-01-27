@@ -14,17 +14,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ShareIcon from "@mui/icons-material/Share";
 import Image from "next/image";
 
-interface Wish {
-  id: number;
-  name: string;
-  description: string;
-}
 
-const wishes: Wish[] = [
-  { id: 1, name: "New Laptop", description: "A high-end gaming laptop" },
-  { id: 2, name: "Vacation", description: "Trip to Hawaii" },
-  { id: 3, name: "Smartphone", description: "Latest model smartphone" },
-];
+
 
 const TableWish: React.FC = ({ wishes }) => {
   const handleDelete = (id: number) => {
