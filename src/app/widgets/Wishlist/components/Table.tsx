@@ -29,9 +29,9 @@ const TableWish: React.FC = ({ wishes }) => {
     <TableContainer component={Paper}>
       <Table>
         <TableBody>
-          {wishes.attributes.wishes.map((wish) => (
+          {wishes.attributes.wishes.map((wish, i: number) => (
             <TableRow key={wish.id}>
-              <S.Cell>{wish.id}</S.Cell>
+              <S.Cell>{i + 1}</S.Cell>
               <S.Cell>{wish.title}</S.Cell>
               <S.Cell>{wish.description}</S.Cell>
               <S.Cell>{wish.price}</S.Cell>

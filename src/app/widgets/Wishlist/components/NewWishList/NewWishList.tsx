@@ -54,6 +54,7 @@ export default function NewWishList({ handleClose, setIsNewWishes }: NewWishList
 
   const handleAddWish = () => {
     setOpenNewWish(!openNewWish);
+    console.log(wish);
   };
 
   const sendData = async () => {
@@ -64,21 +65,22 @@ export default function NewWishList({ handleClose, setIsNewWishes }: NewWishList
       account: session.user.id,
       title: currentValues.title,
       wishes: wish,
-      link: currentValues.title + generateRandomId(),
+      link: generateRandomId(),
     };
     try {
       const create = await createWishList(wishList, session.token);
       if (create.status === "success") {
-        console.log('true');
         setIsNewWishes(true);
         setLoader(false);
         setWish([]);
         reset({ title: "" }, { keepValues: false });
         handleClose();
       } else {
+        setLoader(false);
         toast.error(create.error as string);
       }
     } catch (error) {
+      setLoader(false);
       console.error(error);
       toast.error(error as string);
     }
@@ -114,7 +116,7 @@ export default function NewWishList({ handleClose, setIsNewWishes }: NewWishList
           {openNewWish && (
             <NewItem
               setWish={setWish}
-              wish={wish}
+
               setOpenNewWish={setOpenNewWish}
               session={session}
             />

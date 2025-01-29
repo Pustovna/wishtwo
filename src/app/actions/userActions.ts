@@ -54,6 +54,37 @@ export async function createWishList(
   }
 }
 
+export async function updateWishList(
+  id: string,
+  token: string,
+  wishlist: Wishlist
+): Promise<ActionResult<string | {}>> {
+
+  console.log(wishlist);
+  const response = await fetch(`http://localhost:1337/api/wishlists/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      data: {
+        // account: accountId,
+        title: wishlist.title,
+        wishes: wishlist,
+        link: wishlist.link,
+      },
+    }),
+  });
+
+  if (response.ok) {
+    return { status: "success", data: "updatet" };
+  } else {
+    const errorMessage = await response.text();
+    return { status: "error", error: errorMessage || "Failed" };
+  }
+}
+
 export async function getWishList(
   id: string,
   token: string
@@ -136,9 +167,9 @@ export async function deleteWishList(
   });
 
   if (response.ok) {
-    return { status: "success", data: 'deleted'};
-  } else { 
-    const errorMessage = await response.text(); 
-    return { status: "error", error: errorMessage || 'Failed to delete' };
+    return { status: "success", data: "deleted" };
+  } else {
+    const errorMessage = await response.text();
+    return { status: "error", error: errorMessage || "Failed to delete" };
   }
 }

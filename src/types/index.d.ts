@@ -36,8 +36,8 @@ type Wishlist = {
 };
 
 type Wish = {
-  id: number;
-  wishlistId: string;
+  // id: number;
+  // wishlistId: string;
   title: string;
   description: string;
   price: number | null | string;

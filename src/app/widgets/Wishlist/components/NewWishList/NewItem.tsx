@@ -18,9 +18,8 @@ import { LoaderCircle } from "@/app/components/Loader/Loader";
 
 interface NewItemProps {
   setWish: Dispatch<SetStateAction<Wish[]>>;
-  wish: Wish[];
   setOpenNewWish: (option: boolean) => void;
-  session: Session | null;
+  session?: Session | null;
 }
 
 const fieldStyle = {
@@ -29,7 +28,6 @@ const fieldStyle = {
 
 export default function NewItem({
   setWish,
-  wish,
   setOpenNewWish,
   session,
 }: NewItemProps) {
@@ -77,18 +75,18 @@ export default function NewItem({
       }
     }
 
-    setWish([
-      ...wish,
+    setWish((prev) => ([
+      ...prev,
       {
         title: name,
         link: link,
         price: price,
         description: comment,
         image: documentID,
-        id: wish.length,
-        imageObject: image,
+        thingId: "",
+        rating: 0,
       },
-    ]);
+    ]));
     setLoader(false);
     setOpenNewWish(false);
     reset(
